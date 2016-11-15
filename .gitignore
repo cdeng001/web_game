@@ -1,3 +1,6 @@
+assets/*
+.idea/*
+
 # Logs
 logs
 *.log
