@@ -1,0 +1,27 @@
+{
+  "name": "web_game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cdeng001/web_game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cdeng001/web_game/issues"
+  },
+  "homepage": "https://github.com/cdeng001/web_game#readme",
+  "dependencies": {
+    "bcryptjs": "^2.3.0",
+    "express": "^4.10.2",
+    "mongodb": "^2.2.11",
+    "socket.io": "^1.5.0"
+  }
+}
