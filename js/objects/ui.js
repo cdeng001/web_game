@@ -1,5 +1,15 @@
 function UIComponentInit(){
 
+    Crafty.c('Circle', {
+        circle: function(x, y, r){
+            //the x and y arguements are the top left corner of the circle. get center by adding radius to them
+            console.log('Circle created at x:' + x + ' y:' + y);
+            this._circle = new Crafty.circle(x + r, y + r, r);
+
+            return this;
+        }
+    });
+
     //text input are
     Crafty.c('TextInput', {
         required: '2D, DOM, Mouse, Text, Keyboard',
@@ -155,6 +165,36 @@ function UIComponentInit(){
         }
     });
 
+    Crafty.c('MenuBtn', {
+        required: '2D, DOM, Mouse, Tween, Color',
+
+        init: function(){
+            this
+                .color('grey')
+                .bind('MouseOver', function(){
+                    this.tween({
+                        alpha: 0.5
+                    }, 500);
+                })
+                .bind('MouseOut', function(){
+                    this.tween({
+                        alpha: 0
+                    }, 500)
+                });
+        },
+
+        MenuBtn: function(w, h, x, y, f){
+            this.attr({
+                    w: w,
+                    h: h,
+                    x: x,
+                    y: y,
+                    alpha: 0.0
+                })
+                .bind('Click', f);
+        }
+    });
+
     Crafty.c('TitlePanel', {
         required: '2D, DOM, spr_login_panel',
 
@@ -286,7 +326,7 @@ function UIComponentInit(){
                         y: this.y + 270
                     })
                     .bind('Click', function(){
-                        console.log(getLoginCredentials());
+                        game.loginUser(getLoginCredentials());
                     }),
 
                 Crafty.e('TextInput, Username')
@@ -392,17 +432,332 @@ function UIComponentInit(){
                     }),
 
                 Crafty.e('TextInput, Username')
-                    .TextInput(this.x + 19, this.y + 80, 280, 35, 24, false, '16px', 'white'),
+                    .TextInput(this.x + 19, this.y + 80, 280, 35, 16, false, '16px', 'white'),
 
                 Crafty.e('TextInput, Password')
-                    .TextInput(this.x + 19, this.y + 142, 280, 40, 24, true, '16px', 'white'),
+                    .TextInput(this.x + 19, this.y + 142, 280, 40, 16, true, '16px', 'white'),
 
                 Crafty.e('TextInput, Confirm')
-                    .TextInput(this.x + 20, this.y + 204, 280, 40, 24, true, '16px', 'white'),
+                    .TextInput(this.x + 20, this.y + 204, 280, 40, 16, true, '16px', 'white'),
 
                 Crafty.e('TextInput, ScreenName')
-                    .TextInput(this.x + 20, this.y + 268, 280, 40, 24, false, '16px', 'white')
+                    .TextInput(this.x + 20, this.y + 268, 280, 40, 16, false, '16px', 'white')
             )
         },
+    });
+
+    Crafty.c('MainMenu', {
+        required: '2D, DOM, Mouse, spr_mainmenu_menu',
+
+        init: function(){
+
+            var base_x = 100 + 355,
+                base_y = 100,
+                self = this;
+
+            this.attr({
+                x: base_x,
+                y: base_y
+            });
+
+            this._buttons = [
+                //button for send challenge
+                Crafty.e('MenuBtn')
+                    .MenuBtn(322, 45, base_x + 14, base_y + 99, function(){
+                        self._parent.setUpSendPanel();
+                    }),
+
+                //button for accept challenges
+                Crafty.e('MenuBtn')
+                    .MenuBtn(322, 45, base_x + 14, base_y + 144, function(){
+                        self._parent.setUpAcceptPanel();
+                    }),
+
+                //button for personal stats
+                Crafty.e('MenuBtn')
+                    .MenuBtn(322, 45, base_x + 14, base_y + 189, function(){
+                        self._parent.setUpProfilePanel();
+                    }),
+
+                Crafty.e('MenuBtn')
+                    .MenuBtn(322, 45, base_x + 14, base_y + 234, function(){
+                        self._parent.setUpOptionsPanel();
+                    }),
+
+                Crafty.e('MenuBtn')
+                    .MenuBtn(322, 45, base_x + 14, base_y + 279, function(){
+                        console.log("Logout");
+                    })
+            ];
+        },
+
+        MainMenu: function(p){
+            this._parent = p;
+        }
+    });
+
+    Crafty.c('UserChallenge', {
+        required: '2D, DOM, Mouse, Color, Text',
+
+        init: function(){
+            this
+                .attr({
+                    w: 260,
+                    h: 25
+                })
+                .css({
+                    'text-align' : 'left',
+                    'vertical-align' : 'middle',
+                    'padding-top' : '5px'
+                });
+        },
+
+        setPos: function(x, y){
+            this.attr({
+                x: x,
+                y: y
+            })
+
+            return this;
+        },
+
+        setName: function(n){
+            this.text(n);
+
+            return this;
+        }
+    });
+
+    Crafty.c('UserFindPanel', {
+        required: '2D, DOM',
+        init: function(){
+            this.attr({
+                w: 267,
+                h: 171
+            })
+        },
+
+        setPos: function(x, y){
+            //x = 43, y = 153
+            this.attr({
+                x: x + 43,
+                y: y + 153
+            });
+
+            return this;
+        },
+
+        setInfo: function(user){
+            var self = this;
+
+            this._name = Crafty.e('2D, DOM, Text')
+                .attr({
+                    w: 150,
+                    h: 25,
+                    x: self.x,
+                    y: self.y + 10
+                })
+                .text('Name: ' + user.name)
+                .textColor('black')
+                .css({
+                    'text-align' : 'left',
+                    'vertical-align' : 'middle',
+                    'padding-top' : '5px'
+                });
+
+
+            this.attach(this._name);
+
+            return this;
+        }
+    });
+
+    Crafty.c('MainMenuPanel', {
+        required: '2D, DOM, spr_login_panel',
+
+        init : function(){
+            this.attr({
+                x: 100,
+                y: 100,
+                alpha:.5
+            });
+
+            this._state = Object.freeze({
+                send: 'send',
+                accept: 'accept',
+                profile: 'profile',
+                options: 'options'
+            });
+
+            this._currentState = null;
+
+            //this object is the menu options.
+            this.menu = Crafty.e("MainMenu")
+                .MainMenu(this);
+
+            this.panel_objs = [];
+        },
+
+        clearPanel: function(){
+            //delete each object
+            for(var i=0; i<this.panel_objs.length; i++){
+                var e = this.panel_objs[i];
+                //if the object has tween enabled, fade it out
+                if(e.has('Tween')){
+                    e
+                        .tween({
+                            alpha: 0.0
+                        }, 1000)
+
+                        .bind('TweenEnd', function(){
+                            this.destroy();
+                        });
+                }
+                else{
+                    //otherwise destroy it
+                    e.destroy();
+                }
+            }
+            this.panel_objs.length = 0;
+        },
+
+        setUpSendPanel: function(){
+            this.clearPanel();
+
+            var self = this,
+                getQueryName = function(){
+                    return Crafty('SearchName').getText();
+                };
+
+            this.panel_objs.push(
+                Crafty.e('2D, DOM, Tween, spr_mainmenu_send')
+                    .attr({
+                        x: self.x,
+                        y: self.y,
+                        alpha: 0.0
+                    })
+                    .tween({
+                        alpha: 1.0
+                    }, 500),
+
+                Crafty.e('2D, DOM, Mouse')
+                    .attr({
+                        w: 51,
+                        h: 44,
+                        x: this.x + 267,
+                        y: this.y + 85
+                    })
+                    .bind('Click', function(){
+                        //console.log(getQueryName());
+                        game.findUser(getQueryName());
+                    }),
+
+                Crafty.e('TextInput, SearchName')
+                    .TextInput(this.x + 42, this.y + 85, 200, 44, 16, false, '16px', 'white')
+            );
+
+            this._currentState = this._state.send;
+        },
+
+        setUpAcceptPanel: function(){
+            this.clearPanel();
+
+            var self = this;
+
+            this.panel_objs.push(
+                Crafty.e('2D, DOM, Tween, spr_mainmenu_accept')
+                    .attr({
+                        x: self.x,
+                        y: self.y,
+                        alpha: 0.0
+                    })
+                    .tween({
+                        alpha: 1.0
+                    }, 500),
+
+                Crafty.e('2D, DOM, Mouse, Circle')
+                    .attr({
+                        x: self.x + 299,
+                        y: self.y + 70,
+                        w: 33,
+                        h: 33
+                    })
+                    .circle(self.x + 299, self.y + 70, 16.5)
+                    .bind('Click', function(e){
+                        if(this._circle.containsPoint(e.realX, e.realY)){
+                            game.refreshChallenges();
+                        }
+                    })
+            );
+
+            this._currentState = this._state.accept;
+
+            this.updateChallengeList( Crafty.storage('user').challenges );
+        },
+
+        setUpProfilePanel: function(){
+            this.clearPanel();
+
+            var self = this;
+
+            this.panel_objs.push(
+                Crafty.e('2D, DOM, Tween, spr_mainmenu_profile')
+                    .attr({
+                        x: self.x,
+                        y: self.y,
+                        alpha: 0.0
+                    })
+                    .tween({
+                        alpha: 1.0
+                    }, 500)
+            );
+
+            this._currentState = this._state.profile;
+        },
+
+        setUpOptionsPanel: function(){
+            this.clearPanel();
+
+            var self = this;
+
+            this.panel_objs.push(
+                Crafty.e('2D, DOM, Tween, spr_mainmenu_options')
+                    .attr({
+                        x: self.x,
+                        y: self.y,
+                        alpha: 0.0
+                    })
+                    .tween({
+                        alpha: 1.0
+                    }, 500)
+            );
+
+            this._currentState = this._state.options;
+        },
+
+        //this function will update the list of acceptable challenges
+        updateChallengeList: function(l){
+            //only update list if the state is accept
+            if(this._currentState == this._state.accept){
+                //first get rid of all existing challenges
+                Crafty("UserChallenge").each(function() {
+                    this.destroy();
+                });
+            }
+        },
+
+        updateUserFind: function(u){
+            if(this._currentState == this._state.send){
+                //first get rid of all existing finds
+                Crafty("UserFindPanel").each(function() {
+                    this.destroy();
+                });
+
+                console.log(u);
+                Crafty.e('UserFindPanel')
+                    .setPos(this.x, this.y)
+                    .setInfo(u);
+            }
+        }
     });
 }

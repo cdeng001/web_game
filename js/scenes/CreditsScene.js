@@ -1,0 +1,4 @@
+function onCreditsSceneInit(){
+
+}
+function onCreditsSceneExit(){}

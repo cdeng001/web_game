@@ -8,7 +8,7 @@ var MongoClient = require('mongodb').MongoClient,
     assert = require('assert');
 var dbUrl = 'mongodb://localhost:27017/game';
 var appDb,
-    queue = [];
+    onlineUsers = {};
 
 MongoClient.connect(dbUrl, function(err, db) {
     assert.equal(null, err);
@@ -43,6 +43,8 @@ function onSocketConnection(client) {
     client.on('createUser', createUserAttempt);
     client.on('loginUser', loginUserAttempt);
     client.on("disconnect", onClientDisconnect);
+    client.on('refreshChallenges', resendChallenges);
+    client.on('findUser', lookUpUser);
     client.on("challengeUser", sendChallenge);
     client.on('acceptChallenge', acceptChallenge);
     console.log("New player has connected: "+client.id);
@@ -54,6 +56,7 @@ function createUserAttempt(c){
     var player = {
             username : c.username,
             password : bcrypt.hashSync(c.password, 12),
+            name: c.screenname,
             wins: 0,
             losses: 0,
             challenges: []
@@ -78,12 +81,68 @@ function loginUserAttempt(c){
         username = c.username,
         id = this.id;
 
-    appDb.collection('users').find();
+    appDb.collection('users').findOne({username: username}, function(err, doc){
+        if(err != null){
+            console.log(err);
+
+            io.to(id).emit('loginResult', {ok: false, err: 'Couldn\'t find user.'});
+        }
+        else{
+            if(bcrypt.compareSync(passwordAttempt, doc.password)){
+                delete doc.password;
+                delete doc.username;
+
+                onlineUsers[id] = doc.name;
+
+                io.to(id).emit('loginResult', {ok:true, user:doc});
+            }
+            else{
+                io.to(id).emit('loginResult', {ok:false, err: 'Incorrect password.'})
+            }
+        }
+    });
 }
 
-function onClientDisconnect(){}
+function resendChallenges(){
+    var id = this.id,
+        name = onlineUsers[id];
 
-function sendChallenge(){}
+    appDb.collection('users').findOne({name: name}, function(err, doc){
+        if(err != null){
+            console.log(err);
+
+            io.to(id).emit('refreshChallenges', {ok: false, err: err});
+        }
+        else{
+            io.to(id).emit('refreshChallenges', {ok: true, res: doc.challenges});
+        }
+    });
+}
+
+function onClientDisconnect(){
+    var id = this.id;
+
+    delete onlineUsers[id];
+}
+
+function lookUpUser(n){
+    var id = this.id;
+
+    appDb.collection('users').findOne({name: n}, function(err, doc){
+        if(err != null){
+            console.log(err);
+
+            io.to(id).emit('userFound', {ok: false, err: err});
+        }
+        else{
+            io.to(id).emit('userFound', {ok: true, res: doc});
+        }
+    });
+}
+
+function sendChallenge(obj){
+
+}
 
 function acceptChallenge(){}
 

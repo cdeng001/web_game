@@ -37,6 +37,7 @@ function Game(){
 
         //initialize scenes - scene(sceneName, initFunction, endFunction)
         Crafty.defineScene("TitleScene", onTitleSceneInit, onTitleSceneExit);
+        Crafty.defineScene("CreditsScene", onCreditsSceneInit, onCreditsSceneExit);
         Crafty.defineScene("LoginScene", onLoginSceneInit, onLoginSceneExit);
         Crafty.defineScene("MainMenuScene", onMainMenuSceneInit, onMainMenuSceneExit);
         Crafty.defineScene("GameScene", onGameSceneInit, onGameSceneExit);
@@ -77,6 +78,9 @@ function Game(){
         socket = io.connect("http://localhost:3000");
 
         socket.on("createResult", handleCreateResult);
+        socket.on('loginResult', handleLoginResult);
+        socket.on('refreshChallenges', handleChallengeRefresh);
+        socket.on('userFound', handleUserFound);
     }
 
     //client server initiations-------------------------------------------------------
@@ -86,10 +90,53 @@ function Game(){
         socket.emit('createUser', i);
     };
 
+    this.loginUser = function(i){
+        socket.emit('loginUser', i);
+    };
+
+    this.refreshChallenges = function(){
+        socket.emit('refreshChallenges');
+    };
+
+    this.findUser = function(n){
+        socket.emit('findUser', n);
+    };
+
     //client server response functions------------------------------------------------
     function handleCreateResult(r){
         console.log(r);
     }
+
+    function handleLoginResult(r){
+
+        if(r.ok){
+            //store user object in local storage
+            Crafty.storage('user', r.user);
+
+            game.setCurrentScene('MainMenuScene');
+        }
+        else{
+            console.log(r);
+        }
+    }
+
+    function handleChallengeRefresh(r){
+        if(r.ok){
+            console.log(r.res);
+        }
+        else{
+            console.log(r.err);
+        }
+    }
+
+    function handleUserFound(r){
+        if(r.ok){
+            Crafty('MainMenuPanel').get(0).updateUserFind(r.res);
+        }
+        else{
+            console.log(r.err);
+        }
+    };
 
 }
 
