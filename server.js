@@ -45,7 +45,7 @@ function onSocketConnection(client) {
     client.on("disconnect", onClientDisconnect);
     client.on('refreshChallenges', resendChallenges);
     client.on('findUser', lookUpUser);
-    client.on("challengeUser", sendChallenge);
+    client.on("sendChallenge", sendChallenge);
     client.on('acceptChallenge', acceptChallenge);
     console.log("New player has connected: "+client.id);
 
@@ -81,6 +81,10 @@ function loginUserAttempt(c){
         username = c.username,
         id = this.id;
 
+    if(username == null){
+        return;
+    }
+
     appDb.collection('users').findOne({username: username}, function(err, doc){
         if(err != null){
             console.log(err);
@@ -88,17 +92,23 @@ function loginUserAttempt(c){
             io.to(id).emit('loginResult', {ok: false, err: 'Couldn\'t find user.'});
         }
         else{
-            if(bcrypt.compareSync(passwordAttempt, doc.password)){
-                delete doc.password;
-                delete doc.username;
+            if(doc != null){
+                if(bcrypt.compareSync(passwordAttempt, doc.password)){
+                    delete doc.password;
+                    delete doc.username;
 
-                onlineUsers[id] = doc.name;
+                    onlineUsers[id] = doc.name;
 
-                io.to(id).emit('loginResult', {ok:true, user:doc});
+                    io.to(id).emit('loginResult', {ok:true, user:doc});
+                }
+                else{
+                    io.to(id).emit('loginResult', {ok:false, err: 'Incorrect password.'})
+                }
             }
             else{
-                io.to(id).emit('loginResult', {ok:false, err: 'Incorrect password.'})
+                io.to(id).emit('loginResult', {ok: false, err: 'Couldn\'t find user.'});
             }
+
         }
     });
 }
@@ -135,13 +145,46 @@ function lookUpUser(n){
             io.to(id).emit('userFound', {ok: false, err: err});
         }
         else{
+            delete doc.password;
+            delete doc.username;
+            delete doc._id;
+
             io.to(id).emit('userFound', {ok: true, res: doc});
         }
     });
 }
 
-function sendChallenge(obj){
+function sendChallenge(n){
+    var id = this.id,
+        selfName = onlineUsers[id];
 
+    if(selfName != undefined){
+
+        appDb.collection('users').findOne({name: n}, {challenges: 1}, function(err, doc){
+
+            if(err != null){
+                //error
+                console.log(err);
+            }
+            else{
+                console.log(doc);
+                //if the user is already added ignore
+                if( !(doc.challenges.indexOf(selfName) > -1) ){
+                    //the users name was not found on the list, we can add the player
+                    appDb.collection('users').updateOne({name:n}, {$push:{ challenges:selfName }}, function(err, doc){
+                        if(err != null){
+                            io.to(id).emit('challengeSent', {ok:true})
+                        }
+                    });
+                }
+                else{
+                    //the user was found, do not add and send error
+                    io.to(id).emit('challengeSent', {ok:false, err:'Already sent request.'})
+                }
+            }
+
+        });
+    }
 }
 
 function acceptChallenge(){}

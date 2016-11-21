@@ -326,7 +326,12 @@ function UIComponentInit(){
                         y: this.y + 270
                     })
                     .bind('Click', function(){
-                        game.loginUser(getLoginCredentials());
+                        var res = getLoginCredentials();
+
+                        if(res != null){
+                            game.loginUser(res);
+                        }
+
                     }),
 
                 Crafty.e('TextInput, Username')
@@ -522,8 +527,8 @@ function UIComponentInit(){
         },
 
         setName: function(n){
-            this.text(n);
 
+            this.text(n);
             return this;
         }
     });
@@ -550,23 +555,41 @@ function UIComponentInit(){
         setInfo: function(user){
             var self = this;
 
-            this._name = Crafty.e('2D, DOM, Text')
-                .attr({
-                    w: 150,
-                    h: 25,
-                    x: self.x,
-                    y: self.y + 10
-                })
-                .text('Name: ' + user.name)
-                .textColor('black')
-                .css({
-                    'text-align' : 'left',
-                    'vertical-align' : 'middle',
-                    'padding-top' : '5px'
-                });
+            if(user != null){
+                this._findName = user.name;
+                this._name = Crafty.e('2D, DOM, Text')
+                    .attr({
+                        w: 150,
+                        h: 25,
+                        x: self.x,
+                        y: self.y + 10
+                    })
+                    .text('Name: ' + user.name)
+                    .textColor('black')
+                    .css({
+                        'text-align' : 'left',
+                        'vertical-align' : 'middle',
+                        'padding-top' : '5px'
+                    });
 
+                this._challengeBtn = Crafty.e('2D, DOM, Mouse, Text, Color')
+                    .attr({
+                        w: 100,
+                        h: 30,
+                        x: self.x + 30,
+                        y: self.y + 140
+                    })
+                    .color('grey')
+                    .bind('Click', function(e){
+                        game.sendChallenge(self._findName);
+                    });
 
-            this.attach(this._name);
+                this.attach(this._name, this._challengeBtn);
+            }
+            else{
+
+            }
+
 
             return this;
         }
@@ -739,10 +762,23 @@ function UIComponentInit(){
         updateChallengeList: function(l){
             //only update list if the state is accept
             if(this._currentState == this._state.accept){
+                console.log(l);
                 //first get rid of all existing challenges
                 Crafty("UserChallenge").each(function() {
                     this.destroy();
                 });
+
+                var start_x = this.x + 10 + 33,
+                    start_y = this.y + 10 + 75,
+                    height = 30;
+
+                for(var i=0; i< l.length; i++){
+                    this.panel_objs.push(
+                        Crafty.e('UserChallenge')
+                            .setPos(start_x , start_y + 30*i)
+                            .setName(l[i])
+                    );
+                }
             }
         },
 
@@ -753,10 +789,12 @@ function UIComponentInit(){
                     this.destroy();
                 });
 
-                console.log(u);
-                Crafty.e('UserFindPanel')
-                    .setPos(this.x, this.y)
-                    .setInfo(u);
+
+                this.panel_objs.push(
+                    Crafty.e('UserFindPanel')
+                        .setPos(this.x, this.y)
+                        .setInfo(u)
+                );
             }
         }
     });

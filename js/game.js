@@ -81,6 +81,7 @@ function Game(){
         socket.on('loginResult', handleLoginResult);
         socket.on('refreshChallenges', handleChallengeRefresh);
         socket.on('userFound', handleUserFound);
+        socket.on('challengeSent', handleChallengeSent);
     }
 
     //client server initiations-------------------------------------------------------
@@ -90,16 +91,22 @@ function Game(){
         socket.emit('createUser', i);
     };
 
+    //log this user in
     this.loginUser = function(i){
         socket.emit('loginUser', i);
     };
 
+    //resend the challenge list
     this.refreshChallenges = function(){
         socket.emit('refreshChallenges');
     };
 
     this.findUser = function(n){
         socket.emit('findUser', n);
+    };
+
+    this.sendChallenge = function(n){
+        socket.emit('sendChallenge', n);
     };
 
     //client server response functions------------------------------------------------
@@ -123,6 +130,7 @@ function Game(){
     function handleChallengeRefresh(r){
         if(r.ok){
             console.log(r.res);
+            Crafty('MainMenuPanel').get(0).updateChallengeList(r.res);
         }
         else{
             console.log(r.err);
@@ -138,6 +146,14 @@ function Game(){
         }
     };
 
+    function handleChallengeSent(r){
+        if(r.ok){
+            console.log(r);
+        }
+        else{
+            console.log(r.err);
+        }
+    }
 }
 
 
